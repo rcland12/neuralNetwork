@@ -1,0 +1,199 @@
+\documentclass[12pt,letterpaper]{article}
+\usepackage[utf8x]{inputenc}
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{enumitem}
+\usepackage[left=2cm,right=2cm,top=2cm,bottom=2cm]{geometry}
+\usepackage[svgnames,table]{xcolor}
+\usepackage{listings}
+\usepackage{neuralnetwork}
+\lstset{
+  basicstyle=\footnotesize,
+  numberstyle=\tiny\color{gray},
+  stepnumber=1,
+  numbersep=5pt,
+  backgroundcolor=\color{white},
+  showspaces=false,
+  showstringspaces=false,
+  showtabs=false,
+  frame=single,
+  rulecolor=\color{black},
+  tabsize=2,
+  captionpos=b,
+  breaklines=true,
+  breakatwhitespace=true,
+  keywordstyle=\color{blue},
+  commentstyle=\color{dkgreen},
+  stringstyle=\color{mauve}
+}
+
+\definecolor{dkgreen}{rgb}{0,0.6,0}
+\definecolor{gray}{rgb}{0.5,0.5,0.5}
+\definecolor{mauve}{rgb}{0.58,0,0.82}
+
+
+\begin{document}
+\noindent STAT 5660 Assignment 5 \hfill Russell Land\\[3mm]
+{\bf Conceptual/theoretical problems}
+
+\begin{enumerate}
+\item Prove the last two equations governing backpropagation., BP3 and BP4.\\[3mm]
+We can define the cost function as: $$\frac{1}{2N}\sum_{i=1}^N||\vec{y}_i-\vec{a}^L(\vec{x}_i)||^2$$ We can also define $\vec{a}^L$ in the following way. This will help us conceptualize the chain rule. $$\vec{a}^L=\sigma\bigg(W^L\;\sigma\Big(W^{L-1}\;\sigma\big(\ldots\sigma( W^1a_0+b^1)\ldots\big)+b^{L-1}\Big)+b^L\bigg)$$ where $\sigma$ is the sigmoid-logistic function, $W^j$ is the $j^{\text{th}}$ weight matrix, and $b^j$ is the $j^{\text{th}}$ bias vector. Let's begin by proving BP3.
+\begin{proof}
+We are trying to find the partial derivative of the cost function with respect to the $j^{\text{th}}$ bias vector. Using the same notation from lecture, we can show the following... $$\frac{\partial C}{\partial b_j^{\ell}}=\sum_{j\,\in\,\text{batch}}\frac{\partial C}{\partial a_j^{\ell}}\cdot\frac{\partial a_j^{\ell}}{\partial z_j^{\ell}}\cdot\frac{\partial z_j^{\ell}}{\partial b_j^{\ell}}$$ However, the partial derivative of $z_j^{\ell}$ with respect to each beta vector is 1 if $i\,\in\,\text{batch}$ and 0 otherwise. Hence, we just end up with $$\frac{\partial C}{\partial b_j^{\ell}}=\sum_{j\,\in\,\text{batch}}\frac{\partial C}{\partial a_j^{\ell}}\cdot\frac{\partial a_j^{\ell}}{\partial z_j^{\ell}}$$ and if we follow the same steps as BP2 we can arrive at the following:
+\begin{align*}
+	\sum_{j\,\in\,\text{batch}}\frac{\partial C}{\partial a_j^{\ell}}\cdot\frac{\partial a_j^{\ell}}{\partial z_j^{\ell}}&=\frac{\partial C}{\partial a_j^{\ell}}\cdot\frac{\partial a_j^{\ell}}{\partial z_j^{\ell}}\\
+	&=\left(\sum_{i\,\in\,\text{batch}}\frac{\partial C}{\partial z_i^{\ell+1}}\cdot\frac{\partial z_i^{\ell+1}}{\partial a_j^{\ell}}\right)\cdot \sigma'\left(z_j^{\ell}\right)\\
+	&=\left(\sum_{i\,\in\,\text{batch}}\delta_i^{\ell+1}W_{ji}^{\ell+1}\right)\cdot\sigma'\left(z_j^{\ell}\right)\\
+	&=\vec{\delta}^{\ell+1}W^{{\ell+1}^T}\odot\sigma'\left(\vec{z}^{\ell}\right)\\
+	&=\vec{\delta}^{\ell}
+\end{align*}
+Thus, $$\frac{\partial C}{\partial \vec{b}^{\ell}}=\vec{\delta}^{\ell}$$
+\end{proof}
+We can use the same process for proving BP4.
+\begin{proof}
+We are trying to find the partial derivative of the cost function with respect to the $j^{\text{th}}$ weight matrix. Using the same notation from lecture, we can show the following... $$\frac{\partial C}{\partial W_{jk}^{\ell}}=\sum_{j\,\in\,\text{batch}}\frac{\partial C}{\partial a_j^{\ell}}\cdot\frac{\partial a_j^{\ell}}{\partial z_j^{\ell}}\cdot\frac{\partial z_j^{\ell}}{\partial W_{jk}^{\ell}}$$ The partial derivative of $z_j^{\ell}$ with respect to each weight matrix is $a_k^{\ell-1}$ if $i\,\in\,\text{batch}$ and 0 otherwise. Hence, we just end up with $$\frac{\partial C}{\partial W_{jk}^{\ell}}=a_k^{\ell-1}\sum_{j\,\in\,\text{batch}}\frac{\partial C}{\partial a_j^{\ell}}\cdot\frac{\partial a_j^{\ell}}{\partial z_j^{\ell}}$$ and if we follow the same steps as BP2 we can arrive at the following:
+\begin{align*}
+	a_k^{\ell-1}\sum_{j\,\in\,\text{batch}}\frac{\partial C}{\partial a_j^{\ell}}\cdot\frac{\partial a_j^{\ell}}{\partial z_j^{\ell}}&=a_k^{\ell-1}\frac{\partial C}{\partial a_j^{\ell}}\cdot\frac{\partial a_j^{\ell}}{\partial z_j^{\ell}}\\
+	&=a_k^{\ell-1}\left(\sum_{i\,\in\,\text{batch}}\frac{\partial C}{\partial z_i^{\ell+1}}\cdot\frac{\partial z_i^{\ell+1}}{\partial a_j^{\ell}}\right)\cdot \sigma'\left(z_j^{\ell}\right)\\
+	&=a_k^{\ell-1}\left(\sum_{i\,\in\,\text{batch}}\delta_i^{\ell+1}W_{ji}^{\ell+1}\right)\cdot\sigma'\left(z_j^{\ell}\right)\\
+	&=a_k^{\ell-1}\left(\vec{\delta}^{\ell+1}W^{{\ell+1}^T}\odot\sigma'\left(\vec{z}^{\ell}\right)\right)\\
+	&=\vec{a}^{{\ell-1}^T}\vec{\delta}^{\ell}
+\end{align*}
+Thus, $$\frac{\partial C}{\partial W^{\ell}}=\vec{a}^{{\ell-1}^T}\vec{\delta}^{\ell}$$
+\end{proof}
+\newpage
+\addtocounter{enumi}{6}\item The backpropagation algorithm is difficult to code (though I think you are capable), so for this portion, we'll try something different. My function is on the next page. Explain it back to me, line-by-line, including the helper function. Write a detailed explanation of the purpose of each line, connecting it to the mathematics from lecture wherever possible. I'm expecting more depth than the outline of Algorithm 9.3.
+
+\begin{center}
+\begin{neuralnetwork}[height=5.5, nodesize=30pt, nodespacing=3cm, layerspacing=6cm]
+	\newcommand{\x}[2]{$x_#2$}
+	\newcommand{\y}[2]{\normalsize $\hat{y}_#2$}
+	\newcommand{\hfirst}[2]{\small $h^{(1)}_#2$}
+	\newcommand{\mylinktext}[4]{$w_{#2 #4}^{#3}$}
+	\newcommand{\mybiastext}[4]{$b_{#4}^{#3}$}
+	\setdefaultlinklabel{\mylinktext}
+	\inputlayer[count=4, bias=true, title=Input\\layer, text=\x]
+	\hiddenlayer[count=4, bias=true, title=Hidden\\layer 1, text=\hfirst] 
+		\tiny{
+		\link[from layer = 0, from node = 1, to layer = 1, to node = 1, label = \mylinktext, labelpos = near start]
+		\link[from layer = 0, from node = 1, to layer = 1, to node = 2, label = \mylinktext, labelpos = near start]
+		\link[from layer = 0, from node = 1, to layer = 1, to node = 3, label = \mylinktext, labelpos = near start]
+		\link[from layer = 0, from node = 1, to layer = 1, to node = 4, label = \mylinktext, labelpos = near start]
+		\link[from layer = 0, from node = 2, to layer = 1, to node = 1, label = \mylinktext, labelpos = midway]
+		\link[from layer = 0, from node = 2, to layer = 1, to node = 2, label = \mylinktext, labelpos = midway]
+		\link[from layer = 0, from node = 2, to layer = 1, to node = 3, label = \mylinktext, labelpos = midway]
+		\link[from layer = 0, from node = 2, to layer = 1, to node = 4, label = \mylinktext, labelpos = midway]
+		\link[from layer = 0, from node = 3, to layer = 1, to node = 1, label = \mylinktext, labelpos = near start]
+		\link[from layer = 0, from node = 3, to layer = 1, to node = 2, label = \mylinktext, labelpos = near start]
+		\link[from layer = 0, from node = 3, to layer = 1, to node = 3, label = \mylinktext, labelpos = near start]
+		\link[from layer = 0, from node = 3, to layer = 1, to node = 4, label = \mylinktext, labelpos = near start]
+		\link[from layer = 0, from node = 4, to layer = 1, to node = 1, label = \mylinktext, labelpos = near end]
+		\link[from layer = 0, from node = 4, to layer = 1, to node = 2, label = \mylinktext, labelpos = near end]
+		\link[from layer = 0, from node = 4, to layer = 1, to node = 3, label = \mylinktext, labelpos = midway]
+		\link[from layer = 0, from node = 4, to layer = 1, to node = 4, label = \mylinktext, labelpos = midway]
+		\link[from layer = 0, from node = 0, to layer = 1, to node = 1, label = \mybiastext, labelpos = midway]
+		\link[from layer = 0, from node = 0, to layer = 1, to node = 2, label = \mybiastext, labelpos = midway]
+		\link[from layer = 0, from node = 0, to layer = 1, to node = 3, label = \mybiastext, labelpos = near end]
+		\link[from layer = 0, from node = 0, to layer = 1, to node = 4, label = \mybiastext, labelpos = near end]}
+	\outputlayer[count=3, title={\normalsize Output\\Layer}, text=\y]
+		\tiny{
+		\link[from layer = 1, from node = 1, to layer = 2, to node = 1, label = \mylinktext, labelpos = near start]
+		\link[from layer = 1, from node = 1, to layer = 2, to node = 2, label = \mylinktext, labelpos = near start]
+		\link[from layer = 1, from node = 1, to layer = 2, to node = 3, label = \mylinktext, labelpos = near start]
+		\link[from layer = 1, from node = 2, to layer = 2, to node = 1, label = \mylinktext, labelpos = midway]
+		\link[from layer = 1, from node = 2, to layer = 2, to node = 2, label = \mylinktext, labelpos = midway]
+		\link[from layer = 1, from node = 2, to layer = 2, to node = 3, label = \mylinktext, labelpos = midway]
+		\link[from layer = 1, from node = 3, to layer = 2, to node = 1, label = \mylinktext, labelpos = near start]
+		\link[from layer = 1, from node = 3, to layer = 2, to node = 2, label = \mylinktext, labelpos = near start]
+		\link[from layer = 1, from node = 3, to layer = 2, to node = 3, label = \mylinktext, labelpos = near start]
+		\link[from layer = 1, from node = 4, to layer = 2, to node = 1, label = \mylinktext, labelpos = near end]
+		\link[from layer = 1, from node = 4, to layer = 2, to node = 2, label = \mylinktext, labelpos = near end]
+		\link[from layer = 1, from node = 4, to layer = 2, to node = 3, label = \mylinktext, labelpos = midway]
+		\link[from layer = 1, from node = 0, to layer = 2, to node = 1, label = \mybiastext, labelpos = midway]
+		\link[from layer = 1, from node = 0, to layer = 2, to node = 2, label = \mybiastext, labelpos = midway]
+		\link[from layer = 1, from node = 0, to layer = 2, to node = 3, label = \mybiastext, labelpos = near end]}
+\end{neuralnetwork}
+\end{center}
+\begin{tikzpicture}[remember picture, overlay]
+	\node[draw] at (6,13.55) {bias};
+	\draw[<-, black!50, line width=0.01mm] (3.5,13.55) -- (5.5,13.55);
+	\draw[->, black!50, line width=0.01mm] (6.5,13.55) -- (8.35,13.55);
+\end{tikzpicture}
+
+Above is a graph of the neural network that we train in Example 9.4. The goal of this algorithm is to train data to find the best weights and biases that make predictions for input values.\\[2mm]
+
+\lstinputlisting[language=R,linerange={128-128}]{Land5.R}
+
+These are the inputs for the function. We input the data matrix \texttt{X} consisting of the data we want to make a prediction for. This is the ``training" data. The input \texttt{G} is a binary response matrix, or a categorical vector. It will be converted into a binary response matrix within the function. The input \texttt{hidden} will be the number of hidden layers and number of nodes in each. For instance, if you want three hidden layers with 4 nodes, 5 nodes, and 4 nodes you would input: \texttt{c(4,5,4)}. The input \texttt{rate} is the step we want to make in the gradient descent step. Too big of a rate and the function will not converge, and too little of a rate and it may also never converge. The input \texttt{iterations} will be the number of loops we want to run; the more iterations, the better the network (may take a long time to build though). Lastly, the input \texttt{batchsize} will be the number of points we want to sample for each iteration out of the total sample size.
+
+\lstinputlisting[language=R,linerange={129-134}]{Land5.R}
+
+For these couple lines we are essentially preparing the function to run through the iterations. We are turning \texttt{G} into a matrix to help the later function \texttt{transformGtoY}. Since we are wanting to minimize the cost function, we start with  cost of $\infty$ just to initialize it. We do not want to pick any arbitrary large number, say a billion, because a big enough network may have a cost function over a billion, which in that case may never converge. Next, we are scaling \texttt{X} because the backpropagation will perform better with standardized data. Next, we are turning \texttt{G} into a binary response matrix and calling it \texttt{Y}. The next line is just initializing an ``empty" neural network to fill in for each iteration. It is creating weight matrices and bias vectors with the correct dimensions and entries of random normally distributed data close to 0. We then define \texttt{L} as the total number of layers, which includes every hidden layer and the one output layer.
+
+\lstinputlisting[language=R,linerange={136-136}]{Land5.R}
+
+Now we are going to loop through each iteration. The more iterations, the more efficient the neural network should work. The goal is to minimize the cost function, while also not being too expensive for the computer. Too many iterations will be expensive. I settled on 10,000 at first, but you advised 50,000. This gives a well-trained network.
+
+\lstinputlisting[language=R,linerange={137-139}]{Land5.R}
+
+These lines will sample data from the input data and shrink it to our choice of \texttt{batchsize}. If we were to pick a batchsize of 100, it will randomly choose 100 numbers between one and the number of rows in the data matrix. Then it will use tht numbers (\texttt{indices}) as the indices of the rows of \texttt{X} and \texttt{Y}.
+
+\lstinputlisting[language=R,linerange={140-140}]{Land5.R}
+
+This line is finding the \texttt{Alist} and \texttt{Zlist} using the \texttt{feedForward} function. The inputs for the function will use the slimmed-down data matrix from the previous few lines, it will use the neural network from the previous loop (for the first loop it will use the neural network we initialized earlier), and we set \texttt{backPropagate = TRUE}, which will output the \texttt{Alist} and \texttt{Zlist} matrices. Recall that the \texttt{Alist} matrices will be the activation outputs from each layer and the \texttt{Zlist} matrices will be the inputs to the sigmoid function.
+
+\lstinputlisting[language=R,linerange={141-143}]{Land5.R}
+
+The first line is implementing the formula BP1 from lecture. The following line is then finding the column means for each, which will give the average \texttt{delta} for each iteration. The last line of this bit is implementing BP4 from lecture and finding the gradient for the weight. This line is using the formula \texttt{WgradHelper}, which we will go over later. It is calculating an ``outer" product between the activation of the \texttt{L-1} layer and the delta vector.
+
+\lstinputlisting[language=R,linerange={144-145}]{Land5.R}
+
+These two lines are using the formula from stochastic gradient descent to update the weight matrix and bias vector for the last layer. After this last layer has been updated, we move into looping through each hidden layer via BP2.
+
+\lstinputlisting[language=R,linerange={147-147}]{Land5.R}
+
+Now we will begin to loop through the hidden layers, starting with the second to last layer (\texttt{L - 1}) and going to the first hidden layer.
+
+\lstinputlisting[language=R,linerange={148-149}]{Land5.R}
+
+These lines are finding the gradient of the bias vector using BP2 of the $\ell^{\text{th}}$ layer, similar to before.
+
+\lstinputlisting[language=R,linerange={151-156}]{Land5.R}
+
+Notice that when we get to the last layer when calculating the gradient of the weights, we are using \texttt{AandZ\$Alist[[l-1]]}, which in this case doesn't exists. That's why we need to set up an \texttt{if} statement for the last loop (\texttt{l == 1}). When we are at the last loop we use $a_0$, or in this case \texttt{tempX}.
+
+\lstinputlisting[language=R,linerange={158-159}]{Land5.R}
+
+In these two lines we are updating the neural network for each iteration of the $\ell^{\text{th}}$ layer, similar to before
+
+\lstinputlisting[language=R,linerange={162-162}]{Land5.R}
+
+This is initializing the matrix \texttt{a} with the same dimensions as \texttt{X}.
+
+\lstinputlisting[language=R,linerange={164-166}]{Land5.R}
+
+This \texttt{for} loop is ``sweep"ing over every layer and calculating the activation. It's using the formula $\vec{a}^{\ell}=\sigma\left(\vec{a}^{\ell-1}\cdot W^{\ell}+\vec{b}^{\ell}\right)$. We need this value when trying to find the value of the cost function.
+
+\lstinputlisting[language=R,linerange={168-174}]{Land5.R}
+
+In these few lines we are simply calculating the cost function, printing it, and then updating the best network and best cost if the current cost value is less than the previous loop. This way the best network and best cost will always be the best it can. At this point all of the dirty work is over.
+
+\lstinputlisting[language=R,linerange={177-177}]{Land5.R}
+
+Self-explanatory.\\[2mm]
+Now we will go over the function \texttt{WgradHelper}, which stands for Weight Gradient Helper. This function will be calculating BP4 for each iteration.
+
+\lstinputlisting[language=R,linerange={5-5}]{Land5.R}
+
+This function inputs two matrices. In our context the first input is the \texttt{Alist} matrix from the $\ell - 1$ layer. The next input will be the delta matrix from the $\ell^{\text{th}}$ layer.
+
+\lstinputlisting[language=R,linerange={6-10}]{Land5.R}
+
+Recall that the formula for BP4 is $\frac{\partial C}{\partial W^{\ell}}=\vec{a}^{{\ell-1}^t}\cdot \vec{\delta}^{\ell}$. We are multiplying a column vector to a row vector. We call this an outer product, and we will end up with a matrix with the number of rows corresponding to the number of rows in the column vector, and number of columns corresponding to the number of entries in the row vector. This function first initializes a matrix of this size and calls it \texttt{sum}. It then loops through the number of rows of the \texttt{a} matrix. It will calculate the outer product of each row of the \texttt{Alist} matrix and each row of the \texttt{delta} matrix. Each loop it will add this to \texttt{sum}. Each loop the \texttt{sum} will grow. After this calculation is done for each row, we are then left with a matrix that has been added through \texttt{nrow(a)} times. By dividing by this same number, we will be left with the average. This calculation comes from the stochastic gradient descent calculation, $\hat{\nabla}f=\frac{\sum_{i\,\in\,\text{batchsize}}\nabla f_i}{\text{batchsize}}$.
+\end{enumerate}
+\end{document}
